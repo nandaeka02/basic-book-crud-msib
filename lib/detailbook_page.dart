@@ -51,6 +51,24 @@ class _DetailBookPageState extends State<DetailBookPage> {
     }
   }
 
+  Future<Map<String, dynamic>> DeleteBook(String id) async {
+    final token = await AuthService.getToken();
+    final response = await http.delete(
+      Uri.parse(
+          'https://book-crud-service-6dmqxfovfq-et.a.run.app/api/books/$id'), // Ganti dengan URL login Anda
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return {'success': true};
+    } else {
+      return {'success': false};
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,7 +137,14 @@ class _DetailBookPageState extends State<DetailBookPage> {
                                   subtitle: Text(_databook['website']),
                                 ),
                                 ElevatedButton(
-                                    onPressed: () {}, child: Text('Edit'))
+                                    onPressed: () {}, child: Text('Edit')
+                                    ),
+                                ElevatedButton(
+                                    onPressed: () async {
+                                      await DeleteBook(widget.nID);
+                                      Navigator.pop(context);
+                                    }, child: Text('Delete')
+                                    ),
                               ],
                             )))));
   }
