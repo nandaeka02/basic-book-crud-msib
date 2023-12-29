@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:basic_book_crud_msib/Constant/auth_service.dart';
+import 'package:basic_book_crud_msib/editbook_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
@@ -137,14 +138,21 @@ class _DetailBookPageState extends State<DetailBookPage> {
                                   subtitle: Text(_databook['website']),
                                 ),
                                 ElevatedButton(
-                                    onPressed: () {}, child: Text('Edit')
-                                    ),
+                                    onPressed: () {
+                                      Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) => EditBookPage(nID: widget.nID)));
+                                    }, child: Text('Edit')),
                                 ElevatedButton(
+                                    style: ButtonStyle(
+                                      backgroundColor:
+                                          MaterialStateProperty.all<Color>(
+                                              Colors.red),
+                                    ),
                                     onPressed: () async {
                                       await DeleteBook(widget.nID);
                                       Navigator.pop(context);
-                                    }, child: Text('Delete')
-                                    ),
+                                    },
+                                    child: Text('Delete')),
                               ],
                             )))));
   }
