@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:basic_book_crud_msib/Constant/auth_service.dart';
 import 'package:basic_book_crud_msib/addbook_page.dart';
+import 'package:basic_book_crud_msib/detailbook_page.dart';
 import 'package:basic_book_crud_msib/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -29,7 +30,7 @@ class _MainPageState extends State<MainPage> {
     final token = await AuthService.getToken();
     final response = await http.get(
       Uri.parse(
-          'https://book-crud-service-6dmqxfovfq-et.a.run.app/api/books'), // Ganti dengan URL login Anda
+          'https://book-crud-service-6dmqxfovfq-et.a.run.app/api/books/'), // Ganti dengan URL login Anda
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -119,7 +120,9 @@ class _MainPageState extends State<MainPage> {
                               subtitle:
                                   Text(datas[index]['subtitle'].toString()),
                               onTap: () {
-                                print('Item ${datas[index]} diklik');
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) => DetailBookPage(nID: datas[index]['id'].toString())));
+                                // print('Item ${datas[index]} diklik');
                               },
                             ),
                           );
