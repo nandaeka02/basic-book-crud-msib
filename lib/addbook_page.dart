@@ -1,13 +1,91 @@
 import 'dart:convert';
-
 import 'package:basic_book_crud_msib/Constant/auth_service.dart';
 import 'package:basic_book_crud_msib/home_page.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
+import 'package:get/get.dart' hide Response;
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:http/http.dart' as http;
+
+class AddBookController extends GetxController {
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  final TextEditingController isbnController = TextEditingController();
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController subtitleController = TextEditingController();
+  final TextEditingController authorController = TextEditingController();
+  final TextEditingController publishedController = TextEditingController();
+  final TextEditingController publisherController = TextEditingController();
+  final TextEditingController pagesController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController websiteController = TextEditingController();
+
+  RxBool isLoading = false.obs;
+
+  Future<void> addBookRequest(BuildContext context) async {
+    try {
+      isLoading.value = true;
+
+      final token = await AuthService.getToken();
+      Dio dio = Dio();
+      Response response = await dio.post(
+        'https://book-crud-service-6dmqxfovfq-et.a.run.app/api/books/add',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: {
+          'isbn': isbnController.text,
+          'title': titleController.text,
+          'subtitle': subtitleController.text,
+          'author': authorController.text,
+          'published': publishedController.text,
+          'publisher': publisherController.text,
+          'pages': pagesController.text,
+          'description': descriptionController.text,
+          'website': websiteController.text,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Add Book Successfully'),
+            duration:
+                Duration(seconds: 2), // Durasi snackbar ditampilkan (opsional)
+          ),
+        );
+        // Get.snackbar('Success', 'Book added successfully');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Failed to add book. Status: ${response.statusCode}'),
+            duration:
+                Duration(seconds: 2), // Durasi snackbar ditampilkan (opsional)
+          ),
+        );
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('An error occurred while adding the book'),
+          duration:
+              Duration(seconds: 2), // Durasi snackbar ditampilkan (opsional)
+        ),
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+}
 
 class AddBookPage extends StatefulWidget {
   const AddBookPage({super.key});
@@ -17,54 +95,7 @@ class AddBookPage extends StatefulWidget {
 }
 
 class _AddBookPageState extends State<AddBookPage> {
-  final _keyFormAddBook = GlobalKey<FormState>();
-  TextEditingController _isbnController = TextEditingController();
-  TextEditingController _titleController = TextEditingController();
-  TextEditingController _subtitleController = TextEditingController();
-  TextEditingController _authorController = TextEditingController();
-  TextEditingController _publishedController = TextEditingController();
-  TextEditingController _publisherController = TextEditingController();
-  TextEditingController _pagesController = TextEditingController();
-  TextEditingController _descriptionController = TextEditingController();
-  TextEditingController _websiteController = TextEditingController();
-
-  Future<Map<String, dynamic>> AddBookRequest(
-      String isbn,
-      String title,
-      String? subtitle,
-      String? author,
-      String? published,
-      String? publisher,
-      String? pages,
-      String? description,
-      String? website) async {
-    final token = await AuthService.getToken();
-    final response = await http.post(
-      Uri.parse(
-          'https://book-crud-service-6dmqxfovfq-et.a.run.app/api/books/add'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        'isbn': isbn,
-        'title': title,
-        'subtitle': subtitle ?? '',
-        'author': author ?? '',
-        'published': published ?? '',
-        'publisher': publisher ?? '',
-        'pages': pages ?? '',
-        'description': description ?? '',
-        'website': website ?? '',
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      return {'success': true};
-    } else {
-      return {'success': false};
-    }
-  }
+  final AddBookController addBookController = Get.put(AddBookController());
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +105,7 @@ class _AddBookPageState extends State<AddBookPage> {
         centerTitle: true,
         leading: IconButton(
             onPressed: () {
+              Get.delete<AddBookController>();
               Navigator.pop(context);
             },
             icon: Icon(Icons.arrow_back)),
@@ -82,13 +114,13 @@ class _AddBookPageState extends State<AddBookPage> {
           child: Padding(
         padding: EdgeInsets.all(32),
         child: Form(
-            key: _keyFormAddBook,
+            key: addBookController.formKey,
             child: ListView(
               children: [
                 const SizedBox(height: 32),
                 TextFormField(
                   autofocus: true,
-                  controller: _isbnController,
+                  controller: addBookController.isbnController,
                   decoration: InputDecoration(
                     labelText: 'ISBN',
                     border: OutlineInputBorder(),
@@ -102,7 +134,7 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _titleController,
+                  controller: addBookController.titleController,
                   decoration: InputDecoration(
                     labelText: 'Title',
                     border: OutlineInputBorder(),
@@ -116,7 +148,7 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _subtitleController,
+                  controller: addBookController.subtitleController,
                   decoration: InputDecoration(
                     labelText: 'Subtitle',
                     border: OutlineInputBorder(),
@@ -130,7 +162,7 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _authorController,
+                  controller: addBookController.authorController,
                   decoration: InputDecoration(
                     labelText: 'Author',
                     border: OutlineInputBorder(),
@@ -144,7 +176,7 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _publishedController,
+                  controller: addBookController.publishedController,
                   readOnly: true,
                   decoration: InputDecoration(
                       labelText: 'Published',
@@ -163,8 +195,8 @@ class _AddBookPageState extends State<AddBookPage> {
                                         (DateRangePickerSelectionChangedArgs
                                             args) {
                                       setState(() {
-                                        _publishedController.text =
-                                            args.value.toString();
+                                        addBookController.publishedController
+                                            .text = args.value.toString();
                                       });
                                     },
                                     backgroundColor: Colors.white,
@@ -177,9 +209,10 @@ class _AddBookPageState extends State<AddBookPage> {
                                               'yyyy-MM-dd HH:mm:ss')
                                           .format(
                                               DateTime.parse(value.toString()));
-                                      _publishedController.text =
-                                          formattedDateString;
-                                      print(_publishedController);
+                                      addBookController.publishedController
+                                          .text = formattedDateString;
+                                      print(addBookController
+                                          .publishedController);
                                       Navigator.pop(context);
                                       // });
                                     },
@@ -188,7 +221,7 @@ class _AddBookPageState extends State<AddBookPage> {
                                     },
                                   );
                                 });
-                            print(_publishedController);
+                            print(addBookController.publishedController);
                           },
                         ),
                       )),
@@ -201,7 +234,7 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _publisherController,
+                  controller: addBookController.publisherController,
                   decoration: InputDecoration(
                     labelText: 'Publisher',
                     border: OutlineInputBorder(),
@@ -215,7 +248,7 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _pagesController,
+                  controller: addBookController.pagesController,
                   decoration: InputDecoration(
                     labelText: 'Pages',
                     border: OutlineInputBorder(),
@@ -229,7 +262,7 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _descriptionController,
+                  controller: addBookController.descriptionController,
                   decoration: InputDecoration(
                     labelText: 'Description',
                     border: OutlineInputBorder(),
@@ -243,7 +276,7 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _websiteController,
+                  controller: addBookController.websiteController,
                   decoration: InputDecoration(
                     labelText: 'Website',
                     border: OutlineInputBorder(),
@@ -258,42 +291,10 @@ class _AddBookPageState extends State<AddBookPage> {
                 const SizedBox(height: 32),
                 ElevatedButton(
                     onPressed: () async {
-                      if (_keyFormAddBook.currentState!.validate()) {
-                        _keyFormAddBook.currentState!.save();
-
-                        var result = await AddBookRequest(
-                            _isbnController.text,
-                            _titleController.text,
-                            _subtitleController.text,
-                            _authorController.text,
-                            _publishedController.text,
-                            _publisherController.text,
-                            _pagesController.text,
-                            _descriptionController.text,
-                            _websiteController.text);
-                        if (result['success']) {
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.green,
-                              content: Text('Add Book Successfully'),
-                              duration: Duration(
-                                  seconds:
-                                      2), // Durasi snackbar ditampilkan (opsional)
-                            ),
-                          );
-                          Navigator.pop(context);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.red,
-                              content: Text('Failed : '),
-                              duration: Duration(
-                                  seconds:
-                                      2), // Durasi snackbar ditampilkan (opsional)
-                            ),
-                          );
-                        }
+                      if (addBookController.formKey.currentState!.validate()) {
+                        addBookController.formKey.currentState!.save();
+                        var result = await addBookController.addBookRequest(context);
+                        Navigator.pop(context);
                       }
                     },
                     child: Text('Add')),

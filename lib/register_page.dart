@@ -1,9 +1,77 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:get/get.dart' hide Response;
 import 'package:http/http.dart' as http;
 import 'package:basic_book_crud_msib/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
+
+class RegisterController extends GetxController {
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+
+  RxBool obscureTextPassword = true.obs;
+  RxBool obscureTextConfirm = true.obs;
+
+  RxBool isLoading = false.obs;
+
+  Future<void> registerUser(BuildContext context) async {
+    try {
+      isLoading.value = true;
+
+      Dio dio = Dio();
+      Response response = await dio.post(
+        'https://book-crud-service-6dmqxfovfq-et.a.run.app/api/register',
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+        data: {
+          'name': nameController.text,
+          'email': emailController.text,
+          'password': passwordController.text,
+          'password_confirmation': confirmPasswordController.text,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Register Successfully'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        // Anda dapat menavigasi ke halaman lain di sini jika diperlukan
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Failed to add book. Status: ${response.statusCode}'),
+            duration:
+                Duration(seconds: 2), // Durasi snackbar ditampilkan (opsional)
+          ),
+        );
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.green,
+          content: Text('An error occurred while registering the user'),
+          duration:
+              Duration(seconds: 2), // Durasi snackbar ditampilkan (opsional)
+        ),
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+}
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -13,6 +81,8 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final RegisterController registerController = Get.put(RegisterController());
+
   final _keyFormRegister = GlobalKey<FormState>();
   TextEditingController _nameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
@@ -55,13 +125,13 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Padding(
         padding: EdgeInsets.all(32),
         child: Form(
-            key: _keyFormRegister,
+            key: registerController.formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextFormField(
                   autofocus: true,
-                  controller: _nameController,
+                  controller: registerController.nameController,
                   decoration: InputDecoration(
                     labelText: 'Name',
                     border: OutlineInputBorder(),
@@ -76,7 +146,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 32),
                 TextFormField(
                   autofocus: true,
-                  controller: _emailController,
+                  controller: registerController.emailController,
                   decoration: InputDecoration(
                     labelText: 'Email',
                     border: OutlineInputBorder(),
@@ -90,7 +160,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _passwordController,
+                  controller: registerController.passwordController,
                   obscureText: _obscureTextPassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -115,7 +185,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _confirmpasswordController,
+                  controller: registerController.confirmPasswordController,
                   obscureText: _obscureTextConfirm,
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -134,7 +204,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   validator: (value) {
                     if (value!.isEmpty) {
                       return 'Please enter your Password';
-                    } else if (value != _passwordController.text) {
+                    } else if (value != registerController.passwordController.text) {
                       return 'Passwords do not match';
                     }
                     return null;
@@ -143,40 +213,35 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 32),
                 ElevatedButton(
                     onPressed: () async {
-                      if (_keyFormRegister.currentState!.validate()) {
-                        _keyFormRegister.currentState!.save();
-                        var result = await RegisterUser(
-                            _nameController.text,
-                            _emailController.text,
-                            _passwordController.text,
-                            _confirmpasswordController.text);
-
-                        if (result['success']) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.green,
-                              content: Text('Register Successfully'),
-                              duration: Duration(
-                                  seconds:
-                                      2), // Durasi snackbar ditampilkan (opsional)
-                            ),
-                          );
+                      if (registerController.formKey.currentState!.validate()) {
+                        registerController.formKey.currentState!.save();
+                        var result = await registerController.registerUser(context);
+                        Get.delete<RegisterController>();
+                        // if (result['success']) {
+                        //   ScaffoldMessenger.of(context).showSnackBar(
+                        //     SnackBar(
+                        //       backgroundColor: Colors.green,
+                        //       content: Text('Register Successfully'),
+                        //       duration: Duration(
+                        //           seconds:
+                        //               2), // Durasi snackbar ditampilkan (opsional)
+                        //     ),
+                        //   );
                           Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => LoginPage()));
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.red,
-                              content:
-                                  Text('Failed : ${result['message']}'),
-                              duration: Duration(
-                                  seconds:
-                                      2), // Durasi snackbar ditampilkan (opsional)
-                            ),
-                          );
-                        }
+                        // } else {
+                        //   ScaffoldMessenger.of(context).showSnackBar(
+                        //     SnackBar(
+                        //       backgroundColor: Colors.red,
+                        //       content: Text('Failed : ${result['message']}'),
+                        //       duration: Duration(
+                        //           seconds:
+                        //               2), // Durasi snackbar ditampilkan (opsional)
+                        //     ),
+                        //   );
+                        // }
                       }
                     },
                     child: Text('Register')),
@@ -184,6 +249,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 Text('Sudah punya akun?'),
                 TextButton(
                     onPressed: () {
+                      Get.delete<RegisterController>();
                       Navigator.pushReplacement(context,
                           MaterialPageRoute(builder: (context) => LoginPage()));
                     },

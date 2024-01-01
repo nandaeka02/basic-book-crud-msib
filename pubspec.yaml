@@ -39,6 +39,8 @@ dependencies:
   shared_preferences: ^2.1.1
   syncfusion_flutter_datepicker: ^20.4.54
   intl: ^0.18.1
+  dio: ^5.4.0
+  get: ^4.6.5
 
 dev_dependencies:
   flutter_test:
